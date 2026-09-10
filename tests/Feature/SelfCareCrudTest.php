@@ -12,6 +12,7 @@ use App\Models\WorkspacePreference;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
+    config(['services.provider.user_check_url' => 'https://jsonplaceholder.typicode.com/todos/1']);
     Http::preventStrayRequests();
     Http::fake(['https://jsonplaceholder.typicode.com/todos/1' => Http::response(['userId' => 1, 'id' => 1, 'title' => 'Sample todo', 'completed' => false])]);
 });

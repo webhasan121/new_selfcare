@@ -92,9 +92,14 @@ class ConnectionController extends Controller
         // Sample availability check only: JSONPlaceholder does not verify credentials.
         // Do not send customer credentials to this public demo endpoint.
         // Replace the URL and response check with real provider verification later.
+        $url = config('services.provider.user_check_url');
+        if (! is_string($url) || trim($url) === '') {
+            return false;
+        }
+
         try {
             $response = Http::acceptJson()->connectTimeout(5)->timeout(10)
-                ->get('https://jsonplaceholder.typicode.com/todos/1');
+                ->get($url);
 
             return $response->successful() && $response->json('id') === 1;
         } catch (ConnectionException $exception) {

@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'provider' => [
+        'user_check_url' => env('PROVIDER_USER_CHECK_URL'),
+    ],
 
     /*
     |--------------------------------------------------------------------------
