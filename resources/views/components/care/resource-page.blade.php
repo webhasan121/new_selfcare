@@ -2,6 +2,8 @@
 @php
 $indexRoute = $module === 'dashboard' ? 'dashboard' : $module.'.index';
 $heading = ['create' => 'New '.$label, 'edit' => 'Edit '.$label, 'show' => $label.' details'][$mode];
+$updatePermissions = ['dashboard' => 'dashboard.view', 'connections' => 'connection.update', 'billing' => 'invoice.update', 'usage' => 'usage.view', 'support' => 'support.update'];
+$deletePermissions = ['dashboard' => 'dashboard.view', 'connections' => 'connection.delete', 'billing' => 'invoice.update', 'usage' => 'usage.view', 'support' => 'support.delete'];
 @endphp
 <x-app-layout>
     <div class="w-full">
@@ -16,7 +18,14 @@ $heading = ['create' => 'New '.$label, 'edit' => 'Edit '.$label, 'show' => $labe
                 @if($mode === 'show')
                     <dl class="grid gap-x-8 gap-y-6 p-5 sm:grid-cols-2 sm:p-7">
                         @foreach($fields as $field)
-                            <div class="rounded-xl border border-slate-100 dark:border-[#2e4655] bg-slate-50 dark:bg-[#142532] p-4 {{ ($field['type'] ?? '') === 'textarea' ? 'sm:col-span-2' : '' }}"><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-[#b3c6d3]">{{ $field['label'] }}</dt><dd class="mt-2 whitespace-pre-line break-words text-sm font-semibold leading-7 text-slate-800 dark:text-[#e0ebf2]">{{ $field['value'] !== null && $field['value'] !== '' ? ($field['options'][$field['value']] ?? $field['value']) : 'Not provided' }}</dd></div>
+                            <div class="rounded-xl border border-slate-100 dark:border-[#2e4655] bg-slate-50 dark:bg-[#142532] p-4 {{ ($field['type'] ?? '') === 'textarea' ? 'sm:col-span-2' : '' }}">
+                                <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-[#b3c6d3]">{{ $field['label'] }}</dt>
+                                @if(($field['type'] ?? '') === 'status')
+                                    <dd class="mt-3 leading-none"><x-care.status-badge :status="$field['value']" /></dd>
+                                @else
+                                    <dd class="mt-2 whitespace-pre-line break-words text-sm font-semibold leading-7 text-slate-800 dark:text-[#e0ebf2]">{{ $field['value'] !== null && $field['value'] !== '' ? ($field['options'][$field['value']] ?? $field['value']) : 'Not provided' }}</dd>
+                                @endif
+                            </div>
                         @endforeach
                     </dl>
                     @if($module === 'usage')<p class="mx-5 mb-6 rounded-xl border border-sky-200 dark:border-[#345b70] bg-sky-50 dark:bg-[#193b50] p-4 text-sm leading-6 text-sky-800 dark:text-[#a2d8f5]">Your report criteria are saved. Network usage measurements are not connected yet.</p>@endif
@@ -35,8 +44,8 @@ $heading = ['create' => 'New '.$label, 'edit' => 'Edit '.$label, 'show' => $labe
                 @endif
                 @if($mode === 'show' && $record)
                     <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 dark:border-[#2e4655] bg-slate-50/50 dark:bg-[#142532] px-5 py-5 sm:px-7">
-                        <form method="POST" action="{{ route($module.'.destroy', $record) }}" onsubmit="return confirm('Delete this record? This action cannot be undone.')">@csrf @method('DELETE')<button type="submit" class="rounded-xl border border-red-200 dark:border-[#70454b] bg-white dark:bg-[#142532] px-5 py-3 text-sm font-semibold text-red-700 dark:text-[#ffb4b4] hover:bg-red-50 dark:[&:hover]:bg-[#51343a]">Delete record</button></form>
-                        <a href="{{ route($module.'.edit', $record) }}" class="ml-auto rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-800">Edit details</a>
+                        @can($deletePermissions[$module])<form method="POST" action="{{ route($module.'.destroy', $record) }}" onsubmit="return confirm('Delete this record? This action cannot be undone.')">@csrf @method('DELETE')<button type="submit" class="rounded-xl border border-red-200 dark:border-[#70454b] bg-white dark:bg-[#142532] px-5 py-3 text-sm font-semibold text-red-700 dark:text-[#ffb4b4] hover:bg-red-50 dark:[&:hover]:bg-[#51343a]">Delete record</button></form>@endcan
+                        @can($updatePermissions[$module])<a href="{{ route($module.'.edit', $record) }}" class="ml-auto rounded-xl bg-teal-700 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-800">Edit details</a>@endcan
                     </div>
                 @endif
             </section>
@@ -47,4 +56,3 @@ $heading = ['create' => 'New '.$label, 'edit' => 'Edit '.$label, 'show' => $labe
         </div>
     </div>
 </x-app-layout>
-

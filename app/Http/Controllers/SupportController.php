@@ -2,47 +2,48 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\RedirectResponse;
-
-use Illuminate\Database\QueryException;
-
-use Illuminate\Validation\ValidationException;
-
-use Illuminate\Support\Facades\DB;
-
-use App\Models\SupportTicket;
-
 use App\Http\Requests\SaveSupportTicketRequest;
-
 use App\Http\Requests\SelfCareIndexRequest;
 use App\Models\Connection;
+use App\Models\SupportTicket;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SupportController extends Controller
 {
     public function index(SelfCareIndexRequest $request): View
     {
+        Gate::authorize('viewAny', SupportTicket::class);
+
+        $canViewAllTickets = $request->user()->hasAnyRole(['admin', 'support_staff']);
+        $connectionsQuery = Connection::query()
+            ->when(! $canViewAllTickets, fn ($query) => $query->forUser($request->user()));
+
         $selected = null;
         if ($id = $request->validated('connection')) {
-            $selected = Connection::forUser($request->user())->findOrFail($id);
-
+            $selected = (clone $connectionsQuery)->findOrFail($id);
         }
+
         $context = [
-            'connections' => Connection::forUser($request->user())->orderBy('name')->get(),
+            'connections' => $connectionsQuery->orderBy('name')->get(),
             'selected' => $selected,
+            'canViewAllTickets' => $canViewAllTickets,
         ];
 
-        $records = SupportTicket::where('user_id', $request->user()->id)
+        $records = SupportTicket::visibleTo($request->user())
             ->when($selected, fn ($query) => $query->where('connection_id', $selected->id))
-            ->with('connection')->latest()->paginate(10)->withQueryString();
+            ->with(['connection', 'user'])->latest()->paginate(10)->withQueryString();
 
         return view('support.index', $context + ['section' => 'support', 'records' => $records]);
     }
 
-
     public function create(): View|RedirectResponse
     {
-
+        Gate::authorize('create', SupportTicket::class);
 
         $record = null;
 
@@ -55,6 +56,7 @@ class SupportController extends Controller
 
     public function store(SaveSupportTicketRequest $request): RedirectResponse
     {
+        Gate::authorize('create', SupportTicket::class);
 
         try {
             $record = DB::transaction(function () use ($request) {
@@ -76,38 +78,49 @@ class SupportController extends Controller
 
     public function show(string $id): View
     {
-        $record = SupportTicket::where('user_id', auth()->id())->findOrFail($id);
-
+        $record = SupportTicket::visibleTo(auth()->user())->findOrFail($id);
+        Gate::authorize('view', $record);
 
         return view('support.show', [
             'record' => $record,
             'available' => true,
-            'connections' => Connection::forUser(auth()->user())->orderBy('name')->get(),
+            'connections' => Connection::where('user_id', $record->user_id)->orderBy('name')->get(),
         ]);
     }
 
     public function edit(string $id): View
     {
-        $record = SupportTicket::where('user_id', auth()->id())->findOrFail($id);
-
+        $record = SupportTicket::visibleTo(auth()->user())->findOrFail($id);
+        Gate::authorize('update', $record);
 
         return view('support.edit', [
             'record' => $record,
             'available' => true,
-            'connections' => Connection::forUser(auth()->user())->orderBy('name')->get(),
+            'connections' => Connection::where('user_id', $record->user_id)->orderBy('name')->get(),
         ]);
     }
 
     public function update(SaveSupportTicketRequest $request, string $id): RedirectResponse
     {
+        $record = SupportTicket::visibleTo($request->user())->findOrFail($id);
+        Gate::authorize('update', $record);
+
         try {
             $record = DB::transaction(function () use ($request, $id) {
-                $record = SupportTicket::where('user_id', auth()->id())->lockForUpdate()->findOrFail($id);
+                $record = SupportTicket::visibleTo($request->user())->lockForUpdate()->findOrFail($id);
+                $canManageStatus = $request->user()->hasAnyRole(['admin', 'support_staff']);
 
-                if ($record->status !== 'open') {
+                if ($record->status !== 'open' && ! $canManageStatus) {
                     throw ValidationException::withMessages(['record' => 'Only open tickets can be edited.']);
                 }
-                $record->fill($request->validated());
+
+                $validated = $request->validated();
+                $record->fill($validated);
+
+                if ($canManageStatus && array_key_exists('status', $validated)) {
+                    $record->status = $validated['status'];
+                }
+
                 $record->save();
 
                 return $record;
@@ -124,10 +137,12 @@ class SupportController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $record = SupportTicket::visibleTo(auth()->user())->findOrFail($id);
+        Gate::authorize('delete', $record);
+
         try {
             DB::transaction(function () use ($id) {
-                $record = SupportTicket::where('user_id', auth()->id())->lockForUpdate()->findOrFail($id);
-
+                $record = SupportTicket::visibleTo(auth()->user())->lockForUpdate()->findOrFail($id);
                 $record->delete();
             });
         } catch (QueryException $exception) {
@@ -140,4 +155,3 @@ class SupportController extends Controller
         return redirect()->route('support.index')->with('success', 'Support ticket deleted successfully.');
     }
 }
-

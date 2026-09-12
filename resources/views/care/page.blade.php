@@ -34,7 +34,8 @@
         </div>
         <div class="flex flex-wrap items-center gap-4">
             <span class="care-date flex gap-[8px] items-center text-[#7e8e96] text-[11px] whitespace-nowrap [&_.care-icon]:w-[15px] phone:hidden dark:text-[#8faab9]"><x-care-icon name="clock" />{{ now()->format('D, d M Y') }}</span>
-            @if ($section !== 'packages')
+            @php($createPermissions = ['overview' => 'dashboard.view', 'connections' => 'connection.create', 'billing' => 'invoice.create', 'usage' => 'usage.view', 'support' => 'support.create'])
+            @if ($section !== 'packages' && auth()->user()->can($createPermissions[$section]))
             <a href="{{ route(($section === 'overview' ? 'dashboard' : $section).'.create') }}" class="inline-flex items-center gap-2 rounded-xl border border-teal-200 dark:border-[#38645b] bg-white dark:bg-[#142532] px-4 py-3 text-xs font-semibold text-teal-700 dark:text-[#8addc8] shadow-sm hover:bg-teal-50 dark:[&:hover]:bg-[#235348]">{{ ['overview' => 'Workspace preferences', 'connections' => 'Connection form', 'billing' => 'Invoice form', 'packages' => 'Package form', 'usage' => 'Report form', 'support' => 'New ticket'][$section] }} <span aria-hidden="true">+</span></a>
             @endif
         </div>

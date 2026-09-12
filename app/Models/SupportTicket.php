@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -18,5 +19,13 @@ class SupportTicket extends Model
     {
         return $this->belongsTo(Connection::class);
     }
-}
 
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        if ($user->hasAnyRole(['admin', 'support_staff'])) {
+            return $query;
+        }
+
+        return $query->where($query->qualifyColumn('user_id'), $user->getKey());
+    }
+}

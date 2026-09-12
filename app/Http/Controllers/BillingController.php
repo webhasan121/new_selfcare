@@ -2,29 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\RedirectResponse;
-
-use Illuminate\Database\QueryException;
-
-use Illuminate\Validation\ValidationException;
-
-use Illuminate\Support\Facades\DB;
-
 use App\Http\Requests\SaveInvoiceRequest;
-
 use App\Http\Requests\SelfCareIndexRequest;
 use App\Http\Resources\BillingResource;
 use App\Models\Connection;
 use App\Models\Invoice;
 use App\Models\Payment;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BillingController extends Controller
 {
     public function index(SelfCareIndexRequest $request): View|JsonResource
     {
-
+        Gate::authorize('viewAny', Invoice::class);
 
         $selected = null;
         if ($id = $request->validated('connection')) {
@@ -36,15 +32,15 @@ class BillingController extends Controller
             'selected' => $selected,
         ];
         $invoices = Invoice::forUser($request->user())
-            ->when($selected, fn($query) => $query->where('connection_id', $selected->id));
+            ->when($selected, fn ($query) => $query->where('connection_id', $selected->id));
         $data = $context + [
             'section' => 'billing',
             'unpaidCount' => (clone $invoices)->whereIn('status', ['unpaid', 'partially_paid'])->count(),
             'invoices' => $invoices->with('connection')->latest('due_date')->paginate(10, ['*'], 'invoices_page')->withQueryString(),
             'payments' => Payment::forUser($request->user())
-                ->when($selected, fn($query) => $query->whereHas(
+                ->when($selected, fn ($query) => $query->whereHas(
                     'invoices',
-                    fn($invoice) => $invoice->where('connection_id', $selected->id)
+                    fn ($invoice) => $invoice->where('connection_id', $selected->id)
                 ))
                 ->with('items.invoice.connection')->latest()->paginate(5, ['*'], 'payments_page')->withQueryString(),
         ];
@@ -52,10 +48,9 @@ class BillingController extends Controller
         return $request->expectsJson() ? new BillingResource($data) : view('billing.index', $data);
     }
 
-
     public function create(): View|RedirectResponse
     {
-
+        Gate::authorize('create', Invoice::class);
 
         $record = null;
 
@@ -68,6 +63,7 @@ class BillingController extends Controller
 
     public function store(SaveInvoiceRequest $request): RedirectResponse
     {
+        Gate::authorize('create', Invoice::class);
 
         try {
             $record = DB::transaction(function () use ($request) {
@@ -91,7 +87,7 @@ class BillingController extends Controller
     public function show(string $id): View
     {
         $record = Invoice::forUser(auth()->user())->findOrFail($id);
-
+        Gate::authorize('view', $record);
 
         return view('billing.show', [
             'record' => $record,
@@ -103,7 +99,7 @@ class BillingController extends Controller
     public function edit(string $id): View
     {
         $record = Invoice::forUser(auth()->user())->findOrFail($id);
-
+        Gate::authorize('update', $record);
 
         return view('billing.edit', [
             'record' => $record,
@@ -114,6 +110,9 @@ class BillingController extends Controller
 
     public function update(SaveInvoiceRequest $request, string $id): RedirectResponse
     {
+        $record = Invoice::forUser($request->user())->findOrFail($id);
+        Gate::authorize('update', $record);
+
         try {
             $record = DB::transaction(function () use ($request, $id) {
                 $record = Invoice::forUser(auth()->user())->lockForUpdate()->findOrFail($id);
@@ -141,6 +140,9 @@ class BillingController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $record = Invoice::forUser(auth()->user())->findOrFail($id);
+        Gate::authorize('delete', $record);
+
         try {
             DB::transaction(function () use ($id) {
                 $record = Invoice::forUser(auth()->user())->lockForUpdate()->findOrFail($id);
@@ -160,4 +162,3 @@ class BillingController extends Controller
         return redirect()->route('billing.index')->with('success', 'Invoice deleted successfully.');
     }
 }
-

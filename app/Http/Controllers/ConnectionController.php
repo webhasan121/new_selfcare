@@ -2,28 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\RedirectResponse;
-
-use Illuminate\Database\QueryException;
-
-use Illuminate\Validation\ValidationException;
-
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\ConnectionException;
-
 use App\Http\Requests\SaveConnectionRequest;
-
 use App\Http\Requests\SelfCareIndexRequest;
 use App\Http\Resources\ConnectionResource;
 use App\Models\Connection;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ConnectionController extends Controller
 {
     public function index(SelfCareIndexRequest $request): View|JsonResource
     {
+        Gate::authorize('viewAny', Connection::class);
 
         $selected = null;
         if ($id = $request->validated('connection')) {
@@ -35,11 +32,11 @@ class ConnectionController extends Controller
             'selected' => $selected,
         ];
         $rows = Connection::forUser($request->user())
-            ->when($selected, fn($query) => $query->whereKey($selected->id))
+            ->when($selected, fn ($query) => $query->whereKey($selected->id))
             ->with([
-                'subscriptions' => fn($query) => $query
+                'subscriptions' => fn ($query) => $query
                     ->where('status', 'active')->whereDate('start_date', '<=', today())
-                    ->whereDate('end_date', '>=', today())->latest('start_date')->with('package')
+                    ->whereDate('end_date', '>=', today())->latest('start_date')->with('package'),
             ])
             ->orderBy('name')->get();
 
@@ -48,10 +45,9 @@ class ConnectionController extends Controller
             : view('connections.index', $context + ['section' => 'connections', 'visibleConnections' => $rows]);
     }
 
-
     public function create(): View|RedirectResponse
     {
-
+        Gate::authorize('create', Connection::class);
 
         $record = null;
 
@@ -64,6 +60,7 @@ class ConnectionController extends Controller
 
     public function store(SaveConnectionRequest $request): RedirectResponse
     {
+        Gate::authorize('create', Connection::class);
         if (! $this->providerUserExists($request->validated('username'), $request->validated('password'))) {
             throw ValidationException::withMessages([
                 'username' => 'The provider could not verify this username and password.',
@@ -110,7 +107,7 @@ class ConnectionController extends Controller
     public function show(string $id): View
     {
         $record = Connection::where('user_id', auth()->id())->findOrFail($id);
-
+        Gate::authorize('view', $record);
 
         return view('connections.show', [
             'record' => $record,
@@ -122,7 +119,7 @@ class ConnectionController extends Controller
     public function edit(string $id): View
     {
         $record = Connection::where('user_id', auth()->id())->findOrFail($id);
-
+        Gate::authorize('update', $record);
 
         return view('connections.edit', [
             'record' => $record,
@@ -133,6 +130,9 @@ class ConnectionController extends Controller
 
     public function update(SaveConnectionRequest $request, string $id): RedirectResponse
     {
+        $record = Connection::forUser($request->user())->findOrFail($id);
+        Gate::authorize('update', $record);
+
         try {
             $record = DB::transaction(function () use ($request, $id) {
                 $record = Connection::where('user_id', auth()->id())->lockForUpdate()->findOrFail($id);
@@ -154,6 +154,9 @@ class ConnectionController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $record = Connection::forUser(auth()->user())->findOrFail($id);
+        Gate::authorize('delete', $record);
+
         try {
             DB::transaction(function () use ($id) {
                 $record = Connection::where('user_id', auth()->id())->lockForUpdate()->findOrFail($id);

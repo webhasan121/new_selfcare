@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SelfCareIndexRequest;
 use App\Models\Connection;
+use App\Models\Package;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class PackageController extends Controller
 {
     public function index(SelfCareIndexRequest $request): View|JsonResponse
     {
+        Gate::authorize('viewAny', Package::class);
+
         $connections = Connection::forUser($request->user())->orderBy('name')->get();
         $selected = null;
 
@@ -38,4 +42,3 @@ class PackageController extends Controller
         ]);
     }
 }
-

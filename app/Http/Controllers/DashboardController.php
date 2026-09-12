@@ -2,30 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-
-use Illuminate\Database\QueryException;
-
-use Illuminate\Validation\ValidationException;
-
-use Illuminate\Support\Facades\DB;
-
-use App\Models\WorkspacePreference;
-
 use App\Http\Requests\SaveWorkspacePreferenceRequest;
-
 use App\Http\Requests\SelfCareIndexRequest;
 use App\Http\Resources\DashboardResource;
 use App\Models\Connection;
 use App\Models\Invoice;
+use App\Models\User;
+use App\Models\WorkspacePreference;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     public function index(SelfCareIndexRequest $request): View|JsonResource|RedirectResponse
     {
+        Gate::authorize('viewAny', WorkspacePreference::class);
+
         if ($section = $request->validated('section')) {
             $selected = null;
             if ($id = $request->validated('connection')) {
@@ -34,11 +31,10 @@ class DashboardController extends Controller
             }
 
             return redirect()->route(
-                $section === 'overview' ? 'dashboard' : $section . '.index',
+                $section === 'overview' ? 'dashboard' : $section.'.index',
                 array_filter(['connection' => $request->validated('connection')])
             );
         }
-
 
         $selected = null;
         if ($id = $request->validated('connection')) {
@@ -55,15 +51,15 @@ class DashboardController extends Controller
             'selected' => $selected,
         ];
         $invoices = Invoice::forUser($request->user())
-            ->when($selected, fn($query) => $query->where('connection_id', $selected->id));
+            ->when($selected, fn ($query) => $query->where('connection_id', $selected->id));
         $data = $context + [
             'section' => 'overview',
             'visibleConnections' => Connection::forUser($request->user())
-                ->when($selected, fn($query) => $query->whereKey($selected->id))
+                ->when($selected, fn ($query) => $query->whereKey($selected->id))
                 ->with([
-                    'subscriptions' => fn($query) => $query
+                    'subscriptions' => fn ($query) => $query
                         ->where('status', 'active')->whereDate('start_date', '<=', today())
-                        ->whereDate('end_date', '>=', today())->latest('start_date')->with('package')
+                        ->whereDate('end_date', '>=', today())->latest('start_date')->with('package'),
                 ])
                 ->orderBy('name')->get(),
             'invoices' => (clone $invoices)->with('connection')->latest('due_date')->limit(5)->get(),
@@ -73,9 +69,9 @@ class DashboardController extends Controller
         return $request->expectsJson() ? new DashboardResource($data) : view('dashboard', $data);
     }
 
-
     public function create(): View|RedirectResponse
     {
+        Gate::authorize('create', WorkspacePreference::class);
 
         $existing = WorkspacePreference::where('user_id', auth()->id())->first();
         if ($existing) {
@@ -93,6 +89,7 @@ class DashboardController extends Controller
 
     public function store(SaveWorkspacePreferenceRequest $request): RedirectResponse
     {
+        Gate::authorize('create', WorkspacePreference::class);
 
         try {
             $record = DB::transaction(function () use ($request) {
@@ -119,7 +116,7 @@ class DashboardController extends Controller
     public function show(string $id): View
     {
         $record = WorkspacePreference::where('user_id', auth()->id())->findOrFail($id);
-
+        Gate::authorize('view', $record);
 
         return view('dashboard.show', [
             'record' => $record,
@@ -131,7 +128,7 @@ class DashboardController extends Controller
     public function edit(string $id): View
     {
         $record = WorkspacePreference::where('user_id', auth()->id())->findOrFail($id);
-
+        Gate::authorize('update', $record);
 
         return view('dashboard.edit', [
             'record' => $record,
@@ -142,6 +139,9 @@ class DashboardController extends Controller
 
     public function update(SaveWorkspacePreferenceRequest $request, string $id): RedirectResponse
     {
+        $record = WorkspacePreference::where('user_id', $request->user()->id)->findOrFail($id);
+        Gate::authorize('update', $record);
+
         try {
             $record = DB::transaction(function () use ($request, $id) {
                 $record = WorkspacePreference::where('user_id', auth()->id())->lockForUpdate()->findOrFail($id);
@@ -163,6 +163,9 @@ class DashboardController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $record = WorkspacePreference::where('user_id', auth()->id())->findOrFail($id);
+        Gate::authorize('delete', $record);
+
         try {
             DB::transaction(function () use ($id) {
                 $record = WorkspacePreference::where('user_id', auth()->id())->lockForUpdate()->findOrFail($id);
@@ -179,4 +182,3 @@ class DashboardController extends Controller
         return redirect()->route('dashboard')->with('success', 'Workspace preference deleted successfully.');
     }
 }
-

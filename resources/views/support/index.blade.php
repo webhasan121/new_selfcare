@@ -1,7 +1,7 @@
 @extends('care.page')
 
 @section('content')
-    <x-care.record-list :records="$records" module="support" title="Your support tickets" />
+    <x-care.record-list :records="$records" module="support" :title="$canViewAllTickets ? 'All customer support tickets' : 'Your support tickets'" :show-owner="$canViewAllTickets" />
     <div class="care-support-grid grid grid-cols-[1.5fr_1fr] gap-[22px] phone:grid-cols-[1fr] phone:gap-[18px]">
         <section class="care-panel bg-[white] [border:1px_solid_#e6ecee] rounded-[14px] overflow-hidden [&_h2]:text-[16px] [&_h2]:font-[680] [&_h2]:tracking-[-0.3px] [&_h2]:text-[#29424c] phone:[&_h2]:text-[15px] dark:bg-[#142532] dark:border-[#2c414f] dark:[&_h2]:text-[#e2edf2] care-faq p-[30px] [&_h2]:text-[23px] [&_h2]:m-[10px_0_25px] [&_details]:[border-top:1px_solid_#e7eeee] [&_details]:p-[20px_0] [&_summary]:text-[13px] [&_summary]:font-semibold [&_summary]:cursor-pointer [&_summary]:flex [&_summary]:justify-between [&_summary]:gap-[20px] [&_summary]:list-none [&_summary_span]:text-[#229381] [&_details_p]:text-[12px] [&_details_p]:leading-[1.9] [&_details_p]:text-[#7a9097] [&_details_p]:mt-[15px] dark:[&_details_p]:text-[#a3b6c2] dark:[&_details]:border-[#293e4c] dark:[&_summary]:text-[#d6e5ec]"><span class="care-eyebrow text-[9px] tracking-[1.7px] font-[750] text-[#6d8991] phone:text-[8px] dark:text-[#8faab9]">A LITTLE GUIDANCE</span>
             <h2>Good questions. Simple answers.</h2>
