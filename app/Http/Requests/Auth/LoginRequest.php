@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -27,6 +29,13 @@ class LoginRequest extends FormRequest
      */
     public function rules(): array
     {
+        if ($this->apiLoginEnabled()) {
+            return [
+                'user_id' => ['required', 'integer', 'min:1'],
+                'secret' => ['required', 'string'],
+            ];
+        }
+
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
@@ -42,11 +51,15 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $authenticated = $this->apiLoginEnabled()
+            ? $this->authenticateWithApiCredentials()
+            : Auth::attempt($this->only('email', 'password'), $this->boolean('remember'));
+
+        if (! $authenticated) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
+                $this->apiLoginEnabled() ? 'user_id' : 'email' => trans('auth.failed'),
             ]);
         }
 
@@ -81,6 +94,28 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        $identifier = $this->apiLoginEnabled()
+            ? $this->string('user_id')
+            : Str::lower($this->string('email'));
+
+        return Str::transliterate($identifier.'|'.$this->ip());
+    }
+
+    private function apiLoginEnabled(): bool
+    {
+        return (string) setting('Auth Method', '0') === '1';
+    }
+
+    private function authenticateWithApiCredentials(): bool
+    {
+        $user = User::query()->find($this->integer('user_id'));
+
+        if ($user === null || ! Hash::check($this->string('secret'), $user->password)) {
+            return false;
+        }
+
+        Auth::login($user, $this->boolean('remember'));
+
+        return true;
     }
 }
