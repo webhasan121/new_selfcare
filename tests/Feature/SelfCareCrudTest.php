@@ -82,7 +82,7 @@ test('packages are read only and do not expose the local catalogue', function ()
     $this->put('/packages/'.$package->id, [])->assertNotFound();
     $this->delete('/packages/'.$package->id)->assertNotFound();
     expect($package->fresh())->not->toBeNull();
-    $this->getJson('/packages')->assertOk()->assertJsonPath('meta.demo', true)->assertJsonCount(3, 'data');
+    $this->getJson('/packages')->assertOk()->assertViewIs('packages.index')->assertSee('Demo preview');
 });
 
 test('package connection filter rejects another customers connection', function () {
@@ -197,7 +197,7 @@ test('connection credentials are required and encrypted without being exposed', 
         ->and($record->getRawOriginal('password'))->not->toBe('secret-connection-password')
         ->and($record->toArray())->not->toHaveKey('password');
     $this->get('/connections/'.$record->id)->assertOk()->assertSee('isp-user')->assertDontSee('secret-connection-password');
-    $this->getJson('/connections')->assertOk()->assertJsonMissingPath('data.0.password');
+    $this->getJson('/connections')->assertOk()->assertViewIs('connections.index')->assertDontSee('secret-connection-password');
 });
 
 test('failed provider verification does not save a connection', function () {

@@ -4,13 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SaveInvoiceRequest;
 use App\Http\Requests\SelfCareIndexRequest;
-use App\Http\Resources\BillingResource;
 use App\Models\Connection;
 use App\Models\Invoice;
 use App\Models\Payment;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +16,7 @@ use Illuminate\View\View;
 
 class BillingController extends Controller
 {
-    public function index(SelfCareIndexRequest $request): View|JsonResource
+    public function index(SelfCareIndexRequest $request): View
     {
         Gate::authorize('viewAny', Invoice::class);
 
@@ -45,7 +43,7 @@ class BillingController extends Controller
                 ->with('items.invoice.connection')->latest()->paginate(5, ['*'], 'payments_page')->withQueryString(),
         ];
 
-        return $request->expectsJson() ? new BillingResource($data) : view('billing.index', $data);
+        return view('billing.index', $data);
     }
 
     public function create(): View|RedirectResponse

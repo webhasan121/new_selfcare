@@ -4,14 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SaveWorkspacePreferenceRequest;
 use App\Http\Requests\SelfCareIndexRequest;
-use App\Http\Resources\DashboardResource;
 use App\Models\Connection;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Models\WorkspacePreference;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -19,7 +17,7 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(SelfCareIndexRequest $request): View|JsonResource|RedirectResponse
+    public function index(SelfCareIndexRequest $request): View|RedirectResponse
     {
         Gate::authorize('viewAny', WorkspacePreference::class);
 
@@ -66,7 +64,7 @@ class DashboardController extends Controller
             'unpaidCount' => $invoices->whereIn('status', ['unpaid', 'partially_paid'])->count(),
         ];
 
-        return $request->expectsJson() ? new DashboardResource($data) : view('dashboard', $data);
+        return view('dashboard', $data);
     }
 
     public function create(): View|RedirectResponse

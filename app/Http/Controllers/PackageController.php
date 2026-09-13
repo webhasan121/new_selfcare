@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SelfCareIndexRequest;
 use App\Models\Connection;
 use App\Models\Package;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class PackageController extends Controller
 {
-    public function index(SelfCareIndexRequest $request): View|JsonResponse
+    public function index(SelfCareIndexRequest $request): View
     {
         Gate::authorize('viewAny', Package::class);
 
@@ -29,13 +28,6 @@ class PackageController extends Controller
             ['id' => 'demo-plus', 'name' => 'Home Plus', 'speed_mbps' => 50, 'price' => 1000, 'active' => true, 'expire_date' => today()->addDays(20)->format('d M Y'), 'action' => null, 'description' => 'Smooth streaming, video calls and work from home.'],
             ['id' => 'demo-pro', 'name' => 'Home Pro', 'speed_mbps' => 100, 'price' => 1500, 'active' => false, 'expire_date' => null, 'action' => 'Upgrade', 'description' => 'More speed for gaming, downloads and the whole family.'],
         ]);
-
-        if ($request->expectsJson()) {
-            return response()->json([
-                'data' => $packages,
-                'meta' => ['available' => true, 'demo' => true],
-            ]);
-        }
 
         return view('packages.index', compact('connections', 'selected', 'packages') + [
             'section' => 'packages',

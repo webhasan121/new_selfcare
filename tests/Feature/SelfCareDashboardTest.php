@@ -58,12 +58,11 @@ test('resources expose only the current users records and validate filters', fun
         $connection->user()->associate($user);
         $connection->save();
     }
-    $this->actingAs($owner)->getJson('/connections')->assertOk()
-        ->assertJsonCount(1, 'data')->assertJsonPath('data.0.name', 'Service '.$owner->id)
-        ->assertJsonMissingPath('data.0.user_id');
-    $this->getJson('/billing')->assertOk()->assertJsonStructure(['data' => ['invoices', 'payments', 'pagination']]);
-    $this->getJson('/dashboard')->assertOk()->assertJsonPath('data.open_invoice_count', 0);
-    $this->getJson('/packages')->assertOk()->assertJsonCount(3, 'data')->assertJsonPath('data.1.active', true);
+    $this->actingAs($owner)->getJson('/connections')->assertOk()->assertViewIs('connections.index')
+        ->assertSee('Service '.$owner->id)->assertDontSee('Service '.$other->id);
+    $this->getJson('/billing')->assertOk()->assertViewIs('billing.index');
+    $this->getJson('/dashboard')->assertOk()->assertViewIs('dashboard');
+    $this->getJson('/packages')->assertOk()->assertViewIs('packages.index')->assertSee('Home Plus');
     $this->getJson('/connections?connection=invalid')->assertUnprocessable()->assertJsonValidationErrors('connection');
     $this->getJson('/billing?invoices_page=0')->assertUnprocessable()->assertJsonValidationErrors('invoices_page');
     $this->getJson('/connections?connection='.$connection->id)->assertNotFound();

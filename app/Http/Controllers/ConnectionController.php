@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SaveConnectionRequest;
 use App\Http\Requests\SelfCareIndexRequest;
-use App\Http\Resources\ConnectionResource;
 use App\Models\Connection;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
@@ -18,7 +16,7 @@ use Illuminate\View\View;
 
 class ConnectionController extends Controller
 {
-    public function index(SelfCareIndexRequest $request): View|JsonResource
+    public function index(SelfCareIndexRequest $request): View
     {
         Gate::authorize('viewAny', Connection::class);
 
@@ -32,17 +30,18 @@ class ConnectionController extends Controller
             'selected' => $selected,
         ];
         $rows = Connection::forUser($request->user())
-            ->when($selected, fn ($query) => $query->whereKey($selected->id))
+            ->when($selected, fn($query) => $query->whereKey($selected->id))
             ->with([
-                'subscriptions' => fn ($query) => $query
+                'subscriptions' => fn($query) => $query
                     ->where('status', 'active')->whereDate('start_date', '<=', today())
                     ->whereDate('end_date', '>=', today())->latest('start_date')->with('package'),
             ])
             ->orderBy('name')->get();
 
-        return $request->expectsJson()
-            ? ConnectionResource::collection($rows)
-            : view('connections.index', $context + ['section' => 'connections', 'visibleConnections' => $rows]);
+        return view('connections.index', $context + [
+            'section' => 'connections',
+            'visibleConnections' => $rows,
+        ]);
     }
 
     public function create(): View|RedirectResponse
@@ -61,7 +60,7 @@ class ConnectionController extends Controller
     public function store(SaveConnectionRequest $request): RedirectResponse
     {
         Gate::authorize('create', Connection::class);
-        if (! $this->providerUserExists($request->validated('username'), $request->validated('password'))) {
+        if (!$this->providerUserExists($request->validated('username'), $request->validated('password'))) {
             throw ValidationException::withMessages([
                 'username' => 'The provider could not verify this username and password.',
             ]);
@@ -90,7 +89,7 @@ class ConnectionController extends Controller
         // Do not send customer credentials to this public demo endpoint.
         // Replace the URL and response check with real provider verification later.
         $url = config('services.provider.user_check_url');
-        if (! is_string($url) || trim($url) === '') {
+        if (!is_string($url) || trim($url) === '') {
             return false;
         }
 
@@ -161,7 +160,7 @@ class ConnectionController extends Controller
             DB::transaction(function () use ($id) {
                 $record = Connection::where('user_id', auth()->id())->lockForUpdate()->findOrFail($id);
 
-                if (! in_array($record->status, ['pending', 'inactive'], true)) {
+                if (!in_array($record->status, ['pending', 'inactive'], true)) {
                     throw ValidationException::withMessages(['record' => 'Only pending or inactive connections can be deleted. Contact your provider to stop an active service.']);
                 }
                 $record->delete();

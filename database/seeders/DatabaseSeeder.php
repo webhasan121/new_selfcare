@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             AdminSeeder::class,
             PermissionSeeder::class,
+            SettingSeeder::class,
         ]);
 
         $customer->assignRole('customer');
