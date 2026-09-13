@@ -4,6 +4,7 @@
     @if($preference)
         <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 dark:border-[#38645b] bg-teal-50 dark:bg-[#193d39] px-5 py-4"><div><strong class="text-sm text-teal-900 dark:text-[#8addc8]">{{ $preference->name }}</strong><p class="mt-1 text-xs text-teal-700 dark:text-[#8addc8]">Default view: {{ ucfirst($preference->default_view) }}</p></div><a href="{{ route('dashboard.show', $preference) }}" class="text-xs font-bold text-teal-700 dark:text-[#8addc8]">Manage preferences &rarr;</a></div>
     @endif
+  
     <section class="care-hero relative overflow-hidden rounded-[18px] [background:linear-gradient(115deg,_#087c75,_#07948a_65%,_#32afa0)] min-h-[280px] text-[white] flex items-center p-[32px_38px] [&_h2]:text-[35px] [&_h2]:tracking-[-1px] [&_h2]:leading-[1.18] [&_h2]:font-[680] [&_h2]:m-[14px_0_12px] [&_p]:text-[12px] [&_p]:leading-[1.85] [&_p]:text-[#c0e9e2] [&_p]:mb-[20px] wide:min-h-[310px] phone:min-h-[300px] phone:p-[27px_23px] phone:[&_h2]:text-[31px] dark:[background:linear-gradient(115deg,#075b5b,#086f68_65%,#198a79)]">
         <div class="care-hero-copy z-[1] below-xl:max-w-[58%] phone:max-w-[100%] phone:[&_p]:text-[11px]"><span class="care-hero-tag text-[9px] tracking-[2px] flex items-center gap-[8px] text-[#bbede2] font-[650] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:rounded-full [&_>_span]:bg-[#83e9b9]"><span></span> YOUR WORLD. CONNECTED.</span>
             <h2>More living.<br>Less managing.</h2>
@@ -33,6 +34,7 @@
             <div class="care-art-dot w-[11px] h-[11px] rounded-full bg-[#b9f1cf] absolute right-[26px] top-[58px] shadow-[0_0_0_7px_#ffffff13]"></div>
         </div>
     </section>
+  
     <div class="care-stats grid grid-cols-[repeat(3,_minmax(0,_1fr))] gap-[18px] m-[22px_0] phone:gap-[8px] phone:m-[14px_0_20px]">
         <div class="care-stat flex gap-[17px] items-start bg-[white] [border:1px_solid_#e7ecef] rounded-[13px] p-[23px] [&_p]:text-[11px] [&_p]:text-[#7a8a92] [&_p]:mb-[5px] [&_strong]:text-[27px] [&_strong]:tracking-[-0.7px] [&_strong]:text-[#253e47] [&_strong]:block [&_strong]:font-bold [&_strong]:leading-[1.3] [&_strong_small]:text-[11px] [&_strong_small]:font-[450] [&_strong_small]:text-[#8a989d] [&_strong_small]:tracking-[0] [&_strong_small]:ml-[8px] [&_div_>_span]:text-[9px] [&_div_>_span]:text-[#84949a] [&_div_>_span]:block [&_div_>_span]:mt-[5px] below-xl:p-[18px_15px] below-xl:gap-[12px] below-xl:[&_div_>_span]:text-[9px] phone:p-[14px_10px] phone:block phone:[&_p]:text-[9px] phone:[&_strong]:text-[23px] phone:[&_strong_small]:hidden phone:[&_div_>_span]:text-[8px] phone:[&_div_>_span]:leading-[1.7] dark:bg-[#142532] dark:border-[#2c414f] dark:[&_strong]:text-[#e2edf2] dark:[&_p]:text-[#a3b6c2] dark:[&_div>span]:text-[#a3b6c2]"><span class="care-stat-icon grid place-items-center rounded-[12px] w-[45px] h-[45px] text-[#3089b0] bg-[#eaf4fa] shrink-0 below-xl:w-[36px] below-xl:h-[36px] phone:w-[29px] phone:h-[29px] phone:rounded-[8px] phone:mb-[10px] phone:[&_.care-icon]:w-[16px] phone:[&_.care-icon]:h-[16px] dark:bg-[#203f55] dark:text-[#84c8ed]"><x-care-icon name="wifi" /></span>
             <div>
