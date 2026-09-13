@@ -18,7 +18,7 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('dashboard', DashboardController::class)->names(['index' => 'dashboard']);
+    Route::resource('dashboard', DashboardController::class)->only(['index'])->names(['index' => 'dashboard']);
     Route::resource('connections', ConnectionController::class);
     Route::resource('billing', BillingController::class);
     Route::resource('packages', PackageController::class)->only(['index']);

@@ -8,7 +8,6 @@ use App\Models\Payment;
 use App\Models\SupportTicket;
 use App\Models\UsageReport;
 use App\Models\User;
-use App\Models\WorkspacePreference;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -118,20 +117,6 @@ test('owners can correct invoices but payment linked changes are denied', functi
     expect($invoice->fresh())->not->toBeNull();
 });
 
-test('workspace preferences persist are unique and can be reset', function () {
-    $owner = crudOwner();
-    $home = crudConnection($owner);
-    $this->actingAs($owner)->post('/dashboard', ['name' => 'My workspace', 'default_view' => 'home'])->assertSessionHasNoErrors();
-    $record = WorkspacePreference::sole();
-    $this->get('/dashboard')->assertOk()->assertViewHas('selected', fn ($selected) => $selected->id === $home->id);
-    $this->get('/dashboard?connection=')->assertOk()->assertViewHas('selected', null);
-    $this->get('/dashboard/create')->assertRedirect(route('dashboard.edit', $record));
-    $this->post('/dashboard', ['name' => 'Duplicate', 'default_view' => 'all'])->assertSessionHasErrors('name');
-    $this->put('/dashboard/'.$record->id, ['name' => 'Updated workspace', 'default_view' => 'all'])->assertSessionHasNoErrors();
-    expect($record->fresh()->name)->toBe('Updated workspace');
-    $this->delete('/dashboard/'.$record->id)->assertSessionHasNoErrors();
-    expect(WorkspacePreference::count())->toBe(0);
-});
 
 test('report criteria can be saved edited listed and deleted without fabricated usage', function () {
     $owner = crudOwner();
@@ -168,10 +153,8 @@ test('new resource mutations enforce ownership and date validation', function ()
     $report->user()->associate($other); $report->save();
     $ticket = new SupportTicket(['connection_id' => $connection->id, 'subject' => 'Private', 'category' => 'other', 'description' => 'Private issue description.']);
     $ticket->user()->associate($other); $ticket->save();
-    $pref = new WorkspacePreference(['name' => 'Private', 'default_view' => 'all']);
-    $pref->user()->associate($other); $pref->save();
     $this->actingAs($owner);
-    foreach (['dashboard' => $pref, 'usage' => $report, 'support' => $ticket] as $module => $record) {
+    foreach (['usage' => $report, 'support' => $ticket] as $module => $record) {
         $this->get('/'.$module.'/'.$record->id)->assertNotFound();
         $this->delete('/'.$module.'/'.$record->id)->assertNotFound();
     }
@@ -180,7 +163,6 @@ test('new resource mutations enforce ownership and date validation', function ()
     $ownConnection = crudConnection($owner);
     $this->put('/usage/'.$report->id, ['connection_id' => $ownConnection->id, 'start_date' => today()->toDateString(), 'end_date' => today()->toDateString()])->assertNotFound();
     $this->put('/support/'.$ticket->id, ['connection_id' => $ownConnection->id, 'subject' => 'x', 'category' => 'other', 'description' => 'A long enough description'])->assertNotFound();
-    $this->put('/dashboard/'.$pref->id, ['name' => 'Takeover', 'default_view' => 'all'])->assertNotFound();
 });
 
 

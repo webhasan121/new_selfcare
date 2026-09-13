@@ -9,7 +9,7 @@ test('all resource creation pages render without changing data', function () {
     $admin = User::factory()->create();
     $admin->assignRole(Role::create(['name' => 'Admin', 'guard_name' => 'web']));
     $this->actingAs($admin);
-    foreach (['dashboard', 'connections', 'billing', 'usage', 'support'] as $module) {
+    foreach (['connections', 'billing', 'usage', 'support'] as $module) {
         $this->get('/'.$module.'/create')->assertOk()->assertSee('type="submit"', false)->assertDontSee('Unavailable');
     }
     expect(Connection::count())->toBe(0);

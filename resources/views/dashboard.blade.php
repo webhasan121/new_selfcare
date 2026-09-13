@@ -1,9 +1,6 @@
 @extends('care.page')
 
 @section('content')
-    @if($preference)
-        <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal-200 dark:border-[#38645b] bg-teal-50 dark:bg-[#193d39] px-5 py-4"><div><strong class="text-sm text-teal-900 dark:text-[#8addc8]">{{ $preference->name }}</strong><p class="mt-1 text-xs text-teal-700 dark:text-[#8addc8]">Default view: {{ ucfirst($preference->default_view) }}</p></div><a href="{{ route('dashboard.show', $preference) }}" class="text-xs font-bold text-teal-700 dark:text-[#8addc8]">Manage preferences &rarr;</a></div>
-    @endif
     <section class="care-hero relative overflow-hidden rounded-[18px] [background:linear-gradient(115deg,_#087c75,_#07948a_65%,_#32afa0)] min-h-[280px] text-[white] flex items-center p-[32px_38px] [&_h2]:text-[35px] [&_h2]:tracking-[-1px] [&_h2]:leading-[1.18] [&_h2]:font-[680] [&_h2]:m-[14px_0_12px] [&_p]:text-[12px] [&_p]:leading-[1.85] [&_p]:text-[#c0e9e2] [&_p]:mb-[20px] wide:min-h-[310px] phone:min-h-[300px] phone:p-[27px_23px] phone:[&_h2]:text-[31px] dark:[background:linear-gradient(115deg,#075b5b,#086f68_65%,#198a79)]">
         <div class="care-hero-copy z-[1] below-xl:max-w-[58%] phone:max-w-[100%] phone:[&_p]:text-[11px]"><span class="care-hero-tag text-[9px] tracking-[2px] flex items-center gap-[8px] text-[#bbede2] font-[650] [&_>_span]:w-[5px] [&_>_span]:h-[5px] [&_>_span]:rounded-full [&_>_span]:bg-[#83e9b9]"><span></span> YOUR WORLD. CONNECTED.</span>
             <h2>More living.<br>Less managing.</h2>

@@ -9,7 +9,6 @@ use App\Models\Setting;
 use App\Models\SupportTicket;
 use App\Models\UsageReport;
 use App\Models\User;
-use App\Models\WorkspacePreference;
 use App\Policies\ConnectionPolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\PackagePolicy;
@@ -19,7 +18,6 @@ use App\Policies\SettingPolicy;
 use App\Policies\SupportTicketPolicy;
 use App\Policies\UsageReportPolicy;
 use App\Policies\UserPolicy;
-use App\Policies\WorkspacePreferencePolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Permission\Models\Permission;
@@ -49,7 +47,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(SupportTicket::class, SupportTicketPolicy::class);
         Gate::policy(UsageReport::class, UsageReportPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
-        Gate::policy(WorkspacePreference::class, WorkspacePreferencePolicy::class);
 
         Gate::before(function (User $user, string $ability) {
             return $user->hasRole('admin')
